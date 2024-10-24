@@ -1,6 +1,8 @@
+import json
 from tkinter import *
 from tkinter import messagebox
 from random import randint, choice, shuffle
+from json import *
 FONT = ("Roman New Times", 10, "bold")
 FONT_2 = ("Roman New Times", 10, "normal")
 # ---------------------------- PASSWORD GENERATOR ------------------------------- #
@@ -21,6 +23,27 @@ def generate_password():
 
     password = "".join(password_list)
     password_input.insert(0, password)
+# ---------------------------- SEARCH FUNCTION ----------------------------- #
+
+
+def search():
+    website = website_input.get()
+    try:
+        with open("password.json") as file:
+            data = json.load(file)
+    except FileNotFoundError:
+        with open("Data.json", mode="w") as file:
+            messagebox.showwarning(title="Error", message="No Data File Found")
+    else:
+        if website in data:
+            email = data[website]["Email/Username"]
+            password = data[website]["Password"]
+            messagebox.showinfo(title=website, message=f"Email/Username: {email}\n\nPassword: {password}"
+                                f"\n\nYou can coppy the Password from the Password input")
+            password_input.insert(0, password)
+        else:
+            messagebox.showwarning(title="Warning!", message="There is no such website that matches what you entered")
+# {'Github': {'Email\\Username': 'Bou-eng', 'Password':  '!+JDRL1Nd6vT+1C'}}
 # ---------------------------- SAVE PASSWORD ------------------------------- #
 
 
@@ -29,19 +52,31 @@ def save():
     email_username = em_us_input.get()
     password = password_input.get()
 
+    new_data = {
+        website: {
+            "Email/Username": email_username,
+            "Password": password
+    }
+    }
+
     if len(website) == 0 or len(email_username) == 0 or len(password) == 0:
         messagebox.showwarning(title="Warning", message="You unfill any input!")
     else:
-        is_ok = messagebox.askokcancel(title=website,
-                                       message=f"These are the details entered:\n Email\\Username: {email_username}"
-                                               f"\nPassword: {password}\n\n Arr sure that you wanna save them")
-        if is_ok:
-            with open("password.txt", mode="a") as file:
-                file.write(f"Website: {website} | Email\\Username: {email_username} | Password: {password}\n")
-                website_input.delete(0, END)
-                em_us_input.delete(0, END)
-                em_us_input.insert(0, "example@email.com | Bou-eng")
-                password_input.delete(0, END)
+        try:
+            with open("password.json", mode="r") as file:
+                data = json.load(file)
+        except FileNotFoundError:
+            with open("password.json", mode="w") as file:
+                json.dump(new_data, file, indent=4)
+        else:
+            data.update(new_data)
+            with open("password.json", mode="w") as file:
+                json.dump(data, file, indent=4)
+        finally:
+            website_input.delete(0, END)
+            em_us_input.delete(0, END)
+            em_us_input.insert(0, "example@email.com | Bou-eng")
+            password_input.delete(0, END)
 # ---------------------------- UI SETUP -------------------------------#
 
 
@@ -59,9 +94,14 @@ website_label.config(font=FONT, fg="black", bg="white")
 website_label.grid(row=2, column=0, sticky='w')
 
 website_input = Entry()
-website_input.config(width=35, bg="lightblue", font=FONT_2)
-website_input.grid(column=1, row=2, columnspan=2, sticky='w')
+website_input.config(width=21, bg="lightblue", font=FONT_2)
+website_input.grid(column=1, row=2, sticky='w')
 website_input.focus()
+
+# Search button
+search_button = Button(text="Search", command=search)
+search_button.config(font=FONT, fg="black", bg="white", width=15)
+search_button.grid(column=2, row=2, sticky="w")
 
 email_username_label = Label(text="Email/Username:")
 email_username_label.config(font=FONT, fg="black", bg="white")
